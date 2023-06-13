@@ -21,8 +21,6 @@ namespace SFML_Animation.Engine
 
         public void CheckInput()
         {
-            MovePlayer.Invoke(HandleMousePosition());
-
             foreach (var action in keyActions)
             {
                 action.CheckInput();
@@ -48,7 +46,6 @@ namespace SFML_Animation.Engine
                 }
             }
         }
-
     }
 
 }

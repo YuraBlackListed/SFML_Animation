@@ -1,152 +1,128 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using SFML.Graphics;
 using SFML.System;
 using SFML_Animation.Engine;
 using SFML_Animation.Engine.Interfaces;
+using SFML.Window;
 
 namespace SFML_Animation.Game.GameObjects
 {
     class Player : GameObject, IUpdatable, IDrawable
     {
         public float size = 30;
-        private float speed;
         private float time;
 
-        public bool IsAI;
+        private int curretTextureIndex;
+        private int playerSpeed = 400;
 
-        private CircleShape shape;
-
-        private Vector2f target;
-
-        private Random random;
-
-        public Player(float _speed, RenderWindow scene, bool _IsAI) : base(scene)
+        Dictionary<string, Texture[]> textures = new Dictionary<string, Texture[]>
         {
-            Initialize(_speed, scene, _IsAI, RandomPosition());
+            { "Idle", new Texture[2] },
+            { "Up", new Texture[2] },
+            { "Down", new Texture[2] },
+            { "Left", new Texture[2] },
+            { "Right", new Texture[2] }
+        };
+
+        public Player(RenderWindow scene, Vector2f position) : base(scene)
+        {
+            Initialize(position);
         }
-        public Player(float _speed, RenderWindow scene, bool _IsAI, Vector2f position) : base(scene)
+        private void Initialize(Vector2f position)
         {
-            Initialize(_speed, scene, _IsAI, position);
-        }
-        private void Initialize(float _speed, RenderWindow scene, bool _IsAI, Vector2f position)
-        {
-            IsAI = _IsAI;
-            speed = _speed;
+            GetTextures("Idle");
+            GetTextures("Up");
+            GetTextures("Down");
+            GetTextures("Left");
+            GetTextures("Right");
 
-            random = new();
+            curretTextureIndex = 0;
+            Mesh = new Sprite(textures["Idle"][0]);
 
-            Color randomColor = new Color((byte)random.Next(0, 255), (byte)random.Next(0, 255), (byte)random.Next(0, 255));
-
-            shape = new CircleShape();
-            shape.Radius = size / 2;
-            shape.Position = Position;
-            shape.Origin = new Vector2f(shape.Radius, shape.Radius);
-            shape.FillColor = randomColor;
-
-            Mesh = shape;
+            Mesh.Position = Position;
+            Mesh.Origin = new Vector2f(Mesh.Texture.Size.X / 2, Mesh.Texture.Size.Y / 2);
 
             Position = position;
+            Mesh.Scale = new Vector2f(10f, 10f);
 
-            target = Position;
-
-            InputHandler.MovePlayer += Move;
+            InputHandler.CreateAction(Keyboard.Key.W, MoveUp);
+            InputHandler.CreateAction(Keyboard.Key.S, MoveDown);
+            InputHandler.CreateAction(Keyboard.Key.A, MoveLeft);
+            InputHandler.CreateAction(Keyboard.Key.D, MoveRight);
+        }
+        private void GetTextures(string key)
+        {
+            for (int i = 0; i < textures[key].Length; i++)
+            {
+                textures[key][i] = new Texture($"Sprites/{key}/" + i + ".png");
+            }
+        }
+        private void SwapTexture(string direction)
+        {
+            if (curretTextureIndex == 0)
+            {
+                curretTextureIndex = 1;
+            }
+            else
+            {
+                curretTextureIndex = 0;
+            }
+            switch (direction)
+            {
+                case "Idle":
+                    Mesh = new Sprite(textures["Idle"][curretTextureIndex]);
+                    break;
+                case "Up":
+                    Mesh = new Sprite(textures["Up"][curretTextureIndex]);
+                    break;
+                case "Down":
+                    Mesh = new Sprite(textures["Down"][curretTextureIndex]);
+                    break;
+                case "Left":
+                    Mesh = new Sprite(textures["Left"][curretTextureIndex]);
+                    break;
+                case "Right":
+                    Mesh = new Sprite(textures["Right"][curretTextureIndex]);
+                    break;
+            }
+            Mesh.Scale = new Vector2f(10f, 10f);
         }
         public void Update(float _time)
         {
             time = _time;
+            Position += Velocity * playerSpeed * time;
+            Velocity = new Vector2f(0f, 0f);
+            //SwapTexture("Idle");
         }
-        private void Move(Vector2f lastMousePos)
+        private void MoveUp()
         {
-            if (IsAI)
-            {
-                MoveToRandomPoint();
-            }
-            else
-            {
-                MoveToMouse(lastMousePos);
-            }
+            SwapTexture("Up");
+            Velocity = new Vector2f(Velocity.X, -1);
         }
-        private void MoveToMouse(Vector2f lastMousePos)
+        private void MoveDown()
         {
-
-            target = lastMousePos;
-
-
-            Velocity = new Vector2f(target.X - Position.X, target.Y - Position.Y);
-
-            float distance = (float)Math.Sqrt(Velocity.X * Velocity.X + Velocity.Y * Velocity.Y);
-
-            if (distance > 0)
-            {
-                Velocity /= distance;
-                float playerSpeed = speed * (distance / 100);
-
-                playerSpeed = Math.Min(playerSpeed, speed);
-                playerSpeed = Math.Max(playerSpeed, 10f);
-                Position += Velocity * playerSpeed * time;
-            }
+            SwapTexture("Down");
+            Velocity = new Vector2f(Velocity.X, 1);
         }
-        private void MoveToRandomPoint()
+        private void MoveLeft()
         {
-            if (target == Position)
-            {
-                target = RandomPosition();
-            }
-
-            Velocity = new Vector2f(target.X - Position.X, target.Y - Position.Y);
-
-            float distance = (float)Math.Sqrt(Velocity.X * Velocity.X + Velocity.Y * Velocity.Y);
-
-            if (distance > 0)
-            {
-                Velocity /= distance;
-                float playerSpeed = speed * (distance / 100);
-
-                playerSpeed = Math.Min(playerSpeed, speed);
-                playerSpeed = Math.Max(playerSpeed, 10f);
-                Position += Velocity * playerSpeed * time;
-            }
+            SwapTexture("Left");
+            Velocity = new Vector2f(-1, Velocity.Y);
         }
-        public void Grow(float strength)
+        private void MoveRight()
         {
-            size += strength;
-
-            shape.Radius = size / 2;
-            shape.Origin = new Vector2f(shape.Radius, shape.Radius);
-
-            Mesh = shape;
+            SwapTexture("Right");
+            Velocity = new Vector2f(1, Velocity.Y);
         }
+        //copypaaaasssttttaaaaaaaa
         public new void Destroy()
         {
             base.Destroy();
-            Game.Agario.playersList.Remove(this);
         }
         public void Draw()
         {
             scene.Draw(Mesh);
         }
-        public void HandleCollision(Player defender)
-        {
-            if (size > defender.size)
-            {
-                Grow(defender.size);
-                defender.Destroy();
-            }
-            else if (size == defender.size)
-            {
-                int randomPlayerID = random.Next(1, 3);
-                switch (randomPlayerID)
-                {
-                    case 1:
-                        Grow(defender.size);
-                        defender.Destroy();
-                        break;
-                    case 2:
-                        defender.Grow(size);
-                        Destroy();
-                        break;
-                }
-            }
-        }
+        
     }
 }

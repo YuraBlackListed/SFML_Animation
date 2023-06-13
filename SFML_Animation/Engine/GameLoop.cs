@@ -53,7 +53,7 @@ namespace SFML_Animation.Engine
 
             input = new InputHandler(scene);
 
-            game = new Game.Agario(foodVolume, playerAmount, scene);
+            game = new Game.Agario(scene);
 
             scene.DispatchEvents();
         }

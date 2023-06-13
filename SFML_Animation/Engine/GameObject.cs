@@ -16,7 +16,7 @@ namespace SFML_Animation.Engine
 
         public Vector2f Velocity = new Vector2f(0, 0);
 
-        public Shape Mesh;
+        public Sprite Mesh;
 
         internal RenderWindow scene;
 
